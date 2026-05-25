@@ -1,6 +1,8 @@
 import os
+import pathlib
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 import google.generativeai as genai
@@ -33,6 +35,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Resolve frontend path relative to main.py
+BASE_DIR = pathlib.Path(__file__).parent.parent
+FRONTEND_INDEX = BASE_DIR / "frontend" / "index.html"
 
 # Define request schema
 class TriageRequest(BaseModel):
@@ -74,6 +80,12 @@ CRITICAL RULES:
 2. Use bullet points and bold highlights for readability under high stress.
 3. Only use the three section headers defined above. Do not invent new top-level headers.
 """
+
+@app.get("/")
+async def read_index():
+    if not FRONTEND_INDEX.exists():
+        raise HTTPException(status_code=404, detail="index.html not found")
+    return FileResponse(FRONTEND_INDEX)
 
 @app.get("/api/health")
 async def health_check():
@@ -125,4 +137,5 @@ async def get_triage_plan(payload: TriageRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
