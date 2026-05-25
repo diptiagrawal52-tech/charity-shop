@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Charity Shop Smart Triage Assistant</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cruk: {
+                            purple: '#2e008b',
+                            magenta: '#e4007f',
+                            navy: '#001e62',
+                            lightBg: '#f8fafc',
+                            darkCard: '#1e1b4b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts: Outfit -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Marked.js Markdown Parser -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: linear-gradient(135deg, #0f0c20 0%, #15102a 50%, #22123b 100%);
+        }
+        .glass-card {
+            background: rgba(30, 27, 75, 0.4);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(228, 0, 127, 0.15);
+        }
+        .glow-button {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 15px rgba(228, 0, 127, 0.3);
+        }
+        .glow-button:hover {
+            box-shadow: 0 0 25px rgba(228, 0, 127, 0.6);
+            transform: translateY(-2px);
+        }
+        /* Custom formatting for parsed Markdown */
+        .markdown-content h3 {
+            color: #e4007f;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(228, 0, 127, 0.2);
+            padding-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+        }
+        .markdown-content ul {
+            list-style-type: none;
+            padding-left: 0;
+            margin-bottom: 1.25rem;
+        }
+        .markdown-content li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #e2e8f0;
+        }
+        .markdown-content li::before {
+            content: "✦";
+            position: absolute;
+            left: 0;
+            color: #e4007f;
+        }
+        .markdown-content p {
+            color: #cbd5e1;
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        .markdown-content strong {
+            color: #ffffff;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-100 antialiased p-4 md:p-8">
+    <div class="max-w-7xl mx-auto space-y-6">
+        
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row md:items-center md:justify-between p-6 glass-card rounded-2xl">
+            <div class="flex items-center space-x-4">
+                <div class="h-12 w-12 rounded-xl bg-gradient-to-tr from-cruk-magenta to-cruk-purple flex items-center justify-center text-white glow-button">
+                    <i data-lucide="shield-alert" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                        Cancer Research UK <span class="text-transparent bg-clip-text bg-gradient-to-r from-cruk-magenta to-pink-400">Smart Triage</span>
+                    </h1>
+                    <p class="text-sm text-slate-400">Daily Crisis & Operations Decision Engine</p>
+                </div>
+            </div>
+            <div class="mt-4 md:mt-0 flex items-center space-x-2 bg-slate-900/60 py-1.5 px-3 rounded-full border border-slate-700/50">
+                <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="text-xs text-slate-300 font-medium">Gemini 2.5 Flash connected</span>
+            </div>
+        </header>
+
+        <!-- Main Body Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Input Control Panel -->
+            <form id="triageForm" class="lg:col-span-5 glass-card p-6 rounded-2xl flex flex-col justify-between space-y-6">
+                <div>
+                    <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                        <i data-lucide="sliders-horizontal" class="w-5 h-5 text-cruk-magenta"></i>
+                        Store Crisis Inputs
+                    </h2>
+                    
+                    <!-- Volunteer Section -->
+                    <div class="space-y-4 border-b border-slate-700/50 pb-6 mb-6">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-cruk-magenta">1. Volunteer Staffing</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">Scheduled Today</label>
+                                <input type="number" id="scheduled" value="5" class="w-full bg-slate-900/70 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cruk-magenta transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">Actually Showed Up</label>
+                                <input type="number" id="present" value="2" class="w-full bg-slate-900/70 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cruk-magenta transition">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-2">Critical Roles Missing</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <label class="flex items-center space-x-2 bg-slate-950/40 p-2 rounded-lg border border-slate-800 cursor-pointer select-none">
+                                    <input type="checkbox" name="roles" value="Till Operator" class="accent-cruk-magenta">
+                                    <span class="text-xs text-slate-300">Till Operator</span>
+                                </label>
+                                <label class="flex items-center space-x-2 bg-slate-950/40 p-2 rounded-lg border border-slate-800 cursor-pointer select-none">
+                                    <input type="checkbox" name="roles" value="Stock Sorter" class="accent-cruk-magenta">
+                                    <span class="text-xs text-slate-300">Stock Sorter</span>
+                                </label>
+                                <label class="flex items-center space-x-2 bg-slate-950/40 p-2 rounded-lg border border-slate-800 cursor-pointer select-none">
+                                    <input type="checkbox" name="roles" value="Steamer/Prep" class="accent-cruk-magenta">
+                                    <span class="text-xs text-slate-300">Steamer/Prep</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Donation Section -->
+                    <div class="space-y-4 border-b border-slate-700/50 pb-6 mb-6">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-cruk-magenta">2. Donation Influx</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">Bags of Clothes</label>
+                                <input type="number" id="clothing" value="15" class="w-full bg-slate-900/70 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cruk-magenta transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">Misc Boxes (Books/Toys)</label>
+                                <input type="number" id="misc" value="8" class="w-full bg-slate-900/70 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cruk-magenta transition">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 mb-1">Notable High-Value Items (Optional)</label>
+                            <input type="text" id="highValue" placeholder="e.g. Vintage Leather Jacket, Retro Sega console" class="w-full bg-slate-900/70 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-cruk-magenta transition">
+                        </div>
+                    </div>
+
+                    <!-- Goals Section -->
+                    <div class="space-y-4">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-cruk-magenta">3. Financial Targets & Campaign</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">Daily Target (£)</label>
+                                <input type="number" id="target" value="650" class="w-full bg-slate-900/70 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cruk-magenta transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-400 mb-1">Campaign Focus</label>
+                                <select id="campaign" class="w-full bg-slate-900/70 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-cruk-magenta transition">
+                                    <option value="Stand Up To Cancer">Stand Up To Cancer</option>
+                                    <option value="Breast Cancer Awareness Month">Breast Cancer Awareness</option>
+                                    <option value="General Cancer Research Trials">General Research Trials</option>
+                                    <option value="Gift Aid Sign-up Week">Gift Aid Drive</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full mt-6 bg-gradient-to-r from-cruk-magenta to-cruk-purple text-white font-semibold py-3 px-4 rounded-xl glow-button flex items-center justify-center space-x-2 text-sm focus:outline-none focus:ring-2 focus:ring-cruk-magenta">
+                    <i data-lucide="cpu" class="w-4 h-4"></i>
+                    <span>Generate Smart Triage Strategy</span>
+                </button>
+            </form>
+
+            <!-- Triage Output Dashboard -->
+            <div class="lg:col-span-7 flex flex-col space-y-6">
+                
+                <!-- Loading State (Hidden by Default) -->
+                <div id="loadingState" class="hidden flex-1 glass-card p-12 rounded-2xl flex flex-col items-center justify-center text-center space-y-4">
+                    <div class="relative w-16 h-16">
+                        <div class="absolute inset-0 rounded-full border-4 border-slate-800 border-t-cruk-magenta animate-spin"></div>
+                        <div class="absolute inset-2 rounded-full border-4 border-slate-900 border-t-cruk-purple animate-spin" style="animation-direction: reverse;"></div>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-white">Running Crisis Operations Diagnostic</h3>
+                        <p class="text-sm text-slate-400 max-w-sm mx-auto">Evaluating volunteer gaps, incoming stock volume, and campaign goals to optimize CRUK shop resources...</p>
+                    </div>
+                </div>
+
+                <!-- Empty State (Shown by Default) -->
+                <div id="emptyState" class="flex-1 glass-card p-12 rounded-2xl flex flex-col items-center justify-center text-center space-y-4">
+                    <div class="h-16 w-16 rounded-full bg-slate-900/60 border border-slate-700/30 flex items-center justify-center text-slate-500">
+                        <i data-lucide="clipboard-list" class="w-8 h-8"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-300">No Action Plan Generated</h3>
+                        <p class="text-sm text-slate-500 max-w-xs mx-auto">Fill in the daily inputs on the left and submit to receive your real-time crisis triage operational guide.</p>
+                    </div>
+                </div>
+
+                <!-- Output Display Plan (Hidden by Default) -->
+                <div id="outputState" class="hidden flex flex-col space-y-6 flex-1">
+                    <div class="glass-card p-6 rounded-2xl">
+                        <div class="flex items-center justify-between border-b border-slate-700/50 pb-4 mb-4">
+                            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                                <i data-lucide="sparkles" class="w-5 h-5 text-cruk-magenta"></i>
+                                Smart Triage Action Plan
+                            </h2>
+                            <div class="flex space-x-2">
+                                <button onclick="window.print()" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition" title="Print Plan">
+                                    <i data-lucide="printer" class="w-4 h-4"></i>
+                                </button>
+                                <button id="copyBtn" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition" title="Copy Raw Text">
+                                    <i data-lucide="copy" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Parsed Markdown Container -->
+                        <div id="markdownContainer" class="markdown-content prose prose-invert max-w-none">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Action Checklist -->
+                    <div class="glass-card p-6 rounded-2xl">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-cruk-magenta mb-4 flex items-center gap-2">
+                            <i data-lucide="check-square" class="w-4 h-4"></i>
+                            Interactive Action Items Checklist
+                        </h3>
+                        <div id="checklistItems" class="space-y-2">
+                            <!-- Injected dynamically from parsed markdown tasks -->
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <!-- Frontend Scripting -->
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        const form = document.getElementById('triageForm');
+        const loadingState = document.getElementById('loadingState');
+        const emptyState = document.getElementById('emptyState');
+        const outputState = document.getElementById('outputState');
+        const markdownContainer = document.getElementById('markdownContainer');
+        const checklistItems = document.getElementById('checklistItems');
+        const copyBtn = document.getElementById('copyBtn');
+
+        let rawResponseText = "";
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Toggle visibility
+            emptyState.classList.add('hidden');
+            outputState.classList.add('hidden');
+            loadingState.classList.remove('hidden');
+
+            // Gather values
+            const scheduled = parseInt(document.getElementById('scheduled').value) || 0;
+            const present = parseInt(document.getElementById('present').value) || 0;
+            const target = parseFloat(document.getElementById('target').value) || 0;
+            const campaign = document.getElementById('campaign').value;
+            const clothing = parseInt(document.getElementById('clothing').value) || 0;
+            const misc = parseInt(document.getElementById('misc').value) || 0;
+            const highValueRaw = document.getElementById('highValue').value;
+            
+            const highValueItems = highValueRaw ? highValueRaw.split(',').map(s => s.trim()) : [];
+            const keyRolesMissing = Array.from(document.querySelectorAll('input[name="roles"]:checked')).map(cb => cb.value);
+
+            const payload = {
+                volunteers_scheduled: scheduled,
+                volunteers_present: present,
+                key_roles_missing: keyRolesMissing,
+                donation_bags_clothing: clothing,
+                donation_boxes_misc: misc,
+                donation_high_value_items: highValueItems,
+                daily_revenue_target: target,
+                current_campaign_focus: campaign
+            };
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/triage', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server returned error status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                rawResponseText = data.triage_plan;
+
+                // Render Markdown
+                markdownContainer.innerHTML = marked.parse(rawResponseText);
+                
+                // Build dynamic checklists from parsed text
+                generateInteractiveChecklist(rawResponseText);
+
+                // Show results
+                loadingState.classList.add('hidden');
+                outputState.classList.remove('hidden');
+
+            } catch (err) {
+                console.error("API Call Failed", err);
+                alert(`Error generating triage report: ${err.message}. Ensure the FastAPI server is running on localhost:8000.`);
+                loadingState.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+            }
+        });
+
+        // Function to extract bullets or lists and convert to checkboxes
+        function generateInteractiveChecklist(text) {
+            checklistItems.innerHTML = "";
+            const lines = text.split('\n');
+            let itemIndex = 0;
+
+            lines.forEach((line) => {
+                const cleaned = line.trim();
+                // Match lines starting with a bullet marker: -, *, or number followed by period
+                if (cleaned.startsWith('-') || cleaned.startsWith('*')) {
+                    const taskText = cleaned.replace(/^[-*]\s*/, '').replace(/\*\*/g, '');
+                    if (taskText.length > 5) {
+                        const checkDiv = document.createElement('div');
+                        checkDiv.className = "flex items-start space-x-3 bg-slate-900/40 p-3 rounded-lg border border-slate-800/80 hover:border-slate-700/50 transition cursor-pointer select-none";
+                        
+                        const checkboxId = `task_${itemIndex++}`;
+                        checkDiv.innerHTML = `
+                            <input type="checkbox" id="${checkboxId}" class="mt-0.5 accent-cruk-magenta w-4 h-4 rounded text-cruk-magenta focus:ring-0">
+                            <label for="${checkboxId}" class="text-sm text-slate-300 font-light flex-1 cursor-pointer leading-tight line-through-label">${taskText}</label>
+                        `;
+
+                        // Add cross-out styling toggle
+                        const input = checkDiv.querySelector('input');
+                        const label = checkDiv.querySelector('label');
+                        input.addEventListener('change', () => {
+                            if (input.checked) {
+                                label.classList.add('line-through', 'text-slate-500');
+                                checkDiv.classList.add('opacity-60');
+                            } else {
+                                label.classList.remove('line-through', 'text-slate-500');
+                                checkDiv.classList.remove('opacity-60');
+                            }
+                        });
+
+                        checklistItems.appendChild(checkDiv);
+                    }
+                }
+            });
+
+            if (checklistItems.children.length === 0) {
+                checklistItems.innerHTML = "<p class='text-xs text-slate-500'>No direct tasks could be extracted. Use the main report as your reference.</p>";
+            }
+        }
+
+        // Copy Clipboard Support
+        copyBtn.addEventListener('click', () => {
+            if (!rawResponseText) return;
+            navigator.clipboard.writeText(rawResponseText).then(() => {
+                const icon = copyBtn.querySelector('i');
+                copyBtn.innerHTML = `<i data-lucide="check" class="w-4 h-4 text-emerald-500"></i>`;
+                lucide.createIcons();
+                setTimeout(() => {
+                    copyBtn.innerHTML = `<i data-lucide="copy" class="w-4 h-4"></i>`;
+                    lucide.createIcons();
+                }, 2000);
+            });
+        });
+    </script>
+</body>
+</html>
