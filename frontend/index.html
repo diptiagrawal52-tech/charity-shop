@@ -368,7 +368,16 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Server returned error status: ${response.status}`);
+                    let backendMsg = `Server returned status: ${response.status}`;
+                    try {
+                        const errJson = await response.json();
+                        if (errJson && errJson.detail) {
+                            backendMsg = errJson.detail;
+                        }
+                    } catch (jsonErr) {
+                        // Response body is not JSON or detail is missing
+                    }
+                    throw new Error(backendMsg);
                 }
 
                 const data = await response.json();
